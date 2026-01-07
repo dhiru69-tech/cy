@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSINT: An Investigator’s Lens</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        osint: {
+                            base: '#020617', // Slate 950
+                            surface: '#0f172a', // Slate 900
+                            primary: '#06b6d4', // Cyan 500
+                            secondary: '#3b82f6', // Blue 500
+                            accent: '#f472b6', // Pink 400
+                            alert: '#ef4444', // Red 500
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'scan': 'scan 3s linear infinite',
+                        'typewriter': 'typewriter 2s steps(40) 1s 1 normal both',
+                        'blink': 'blink 500ms steps(50) infinite normal',
+                        'spin-slow': 'spin 12s linear infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        },
+                        scan: {
+                            '0%': { top: '0%', opacity: '0' },
+                            '10%': { opacity: '1' },
+                            '90%': { opacity: '1' },
+                            '100%': { top: '100%', opacity: '0' },
+                        },
+                        typewriter: {
+                            'from': { width: '0' },
+                            'to': { width: '100%' }
+                        },
+                        blink: {
+                            'from': { borderColor: 'transparent' },
+                            'to': { borderColor: '#06b6d4' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #020617;
+            color: #e2e8f0;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Slide Styles */
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.6s ease-in-out, transform 0.6s ease-in-out;
+            z-index: 0;
+            overflow-y: auto;
+            transform: scale(0.95);
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 10;
+            transform: scale(1);
+        }
+
+        /* Typewriter Cursor */
+        .typewriter-text {
+            border-right: 2px solid #06b6d4;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        /* Grid Background */
+        .cyber-grid {
+            background-image: linear-gradient(rgba(6, 182, 212, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(6, 182, 212, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+            width: 200%;
+            height: 200%;
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            transform: perspective(500px) rotateX(60deg);
+            animation: grid-move 20s linear infinite;
+            z-index: -2;
+            opacity: 0.3;
+        }
+
+        @keyframes grid-move {
+            0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
+            100% { transform: perspective(500px) rotateX(60deg) translateY(40px); }
+        }
+
+        /* Scrollbar */
+        .slide::-webkit-scrollbar { width: 8px; }
+        .slide::-webkit-scrollbar-track { background: #0f172a; }
+        .slide::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+</head>
+<body class="relative font-sans text-slate-200 selection:bg-osint-primary selection:text-black">
+
+    <!-- Minimal Progress Bar Only -->
+    <div class="fixed top-0 w-full z-50">
+        <div class="h-1 bg-osint-surface w-full">
+            <div id="progress-bar" class="h-full bg-gradient-to-r from-osint-primary to-osint-secondary w-0 transition-all duration-300 ease-out shadow-[0_0_10px_#06b6d4]"></div>
+        </div>
+    </div>
+
+    <!-- Main Presentation Container -->
+    <main id="presentation-container" class="relative w-full h-full">
+
+        <!-- Slide 0: TEAM LANDING -->
+        <section class="slide active flex items-center justify-center bg-black overflow-hidden" id="slide-0">
+            <!-- Background Image Placeholder (Optional Tech Pattern) -->
+            <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoNiwgMTgyLDIxMiwwLjA1KSIvPjwvc3ZnPg==')] opacity-30"></div>
+            
+            <div class="relative z-10 text-center px-4">
+                <div class="inline-block mb-8 animate-bounce">
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-osint-primary/50 blur-xl rounded-full"></div>
+                        <i data-lucide="terminal" class="relative w-16 h-16 text-osint-primary mx-auto"></i>
+                    </div>
+                </div>
+                
+                <div class="overflow-hidden border-r-2 border-osint-primary pr-2 animate-blink mx-auto w-fit mb-4">
+                    <p class="text-osint-primary tracking-[0.5em] text-sm uppercase font-mono">System Initialized By</p>
+                </div>
+                
+                <!-- Clean Team Name -->
+                <h1 class="text-5xl md:text-8xl font-black text-white mb-8 tracking-tighter drop-shadow-[0_0_15px_rgba(6,182,212,0.5)]">
+                    CY CY HACKXIVIST
+                </h1>
+                
+                <div class="relative h-px w-64 bg-slate-800 mx-auto mb-12 overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-osint-primary to-transparent animate-scan"></div>
+                </div>
+                
+                <button onclick="nextSlide()" class="group relative px-8 py-3 bg-transparent overflow-hidden rounded-md transition-all hover:bg-osint-primary/10 border border-osint-primary/50 text-osint-primary hover:text-white">
+                    <div class="absolute inset-0 w-0 bg-osint-primary transition-all duration-[250ms] ease-out group-hover:w-full opacity-10"></div>
+                    <span class="relative text-sm font-mono tracking-widest uppercase flex items-center gap-2">
+                        Execute Investigation <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    </span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Slide 1: Introduction (What is OSINT?) -->
+        <section class="slide flex items-center justify-center bg-osint-base" id="slide-1">
+            <div class="cyber-grid"></div>
+            <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-12 items-center relative z-10 w-full">
+                <!-- Text Content -->
+                <div class="space-y-6">
+                    <div class="flex items-center gap-3 text-osint-primary mb-2">
+                        <i data-lucide="database" class="w-4 h-4 animate-spin-slow"></i>
+                        <span class="text-xs font-mono uppercase tracking-widest">Protocol: Defined</span>
+                    </div>
+                    
+                    <h2 class="text-6xl font-bold text-white leading-tight">
+                        What is <span class="text-transparent bg-clip-text bg-gradient-to-r from-osint-primary to-osint-secondary">OSINT</span>?
+                    </h2>
+                    
+                    <div class="relative p-6 border-l-2 border-osint-primary bg-osint-surface/50 backdrop-blur-sm rounded-r-lg">
+                        <p class="text-xl text-slate-300 font-mono leading-relaxed">
+                            <span class="text-osint-primary">></span> Open Source Intelligence is the collection and analysis of <span class="text-white font-bold bg-osint-primary/20 px-1">public data</span> to produce actionable intelligence.
+                        </p>
+                    </div>
+
+                    <div class="flex gap-4 pt-4">
+                        <div class="flex items-center gap-2 text-sm text-slate-400 border border-white/10 px-3 py-1 rounded bg-black/40">
+                            <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> Public
+                        </div>
+                        <div class="flex items-center gap-2 text-sm text-slate-400 border border-white/10 px-3 py-1 rounded bg-black/40">
+                            <div class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div> Analyzed
+                        </div>
+                        <div class="flex items-center gap-2 text-sm text-slate-400 border border-white/10 px-3 py-1 rounded bg-black/40">
+                            <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div> Actionable
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visual Content -->
+                <div class="flex justify-center relative">
+                     <!-- Central Hub -->
+                     <div class="relative w-80 h-80">
+                        <div class="absolute inset-0 border border-osint-primary/20 rounded-full animate-spin-slow"></div>
+                        <div class="absolute inset-4 border border-dashed border-osint-secondary/30 rounded-full animate-spin-slow" style="animation-direction: reverse;"></div>
+                        
+                        <!-- Floating Data Points -->
+                        <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-4 bg-black border border-osint-primary p-2 rounded animate-float">
+                            <i data-lucide="globe" class="w-6 h-6 text-osint-primary"></i>
+                        </div>
+                        <div class="absolute bottom-0 right-0 translate-y-4 bg-black border border-osint-primary p-2 rounded animate-float" style="animation-delay: 1s;">
+                            <i data-lucide="file-text" class="w-6 h-6 text-purple-400"></i>
+                        </div>
+                        <div class="absolute top-1/2 left-0 -translate-x-4 bg-black border border-osint-primary p-2 rounded animate-float" style="animation-delay: 2s;">
+                            <i data-lucide="image" class="w-6 h-6 text-green-400"></i>
+                        </div>
+
+                        <!-- Center Eye -->
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="relative">
+                                <div class="absolute inset-0 bg-osint-primary/20 blur-xl animate-pulse"></div>
+                                <i data-lucide="scan-eye" class="relative w-24 h-24 text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 2: Why It Matters (Scanning Effect) -->
+        <section class="slide flex items-center justify-center bg-osint-surface" id="slide-2">
+            <div class="max-w-7xl mx-auto px-4 w-full">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold text-white mb-4">Target Identification</h2>
+                    <p class="text-slate-400 font-mono">Scanning user roles...</p>
+                </div>
+                
+                <div class="grid md:grid-cols-3 gap-8">
+                    <!-- Defender Card -->
+                    <div class="group relative bg-osint-base p-1 rounded-xl overflow-hidden hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500/20 to-transparent translate-y-[-100%] group-hover:translate-y-[100%] transition-transform duration-1000"></div>
+                        <div class="bg-slate-950 p-8 rounded-lg h-full border border-blue-500/30">
+                            <i data-lucide="shield-check" class="w-12 h-12 text-blue-400 mb-6 group-hover:scale-110 transition-transform"></i>
+                            <h3 class="text-xl font-bold text-white mb-3">Defenders</h3>
+                            <p class="text-slate-400 text-sm">Threat intelligence. Securing the digital perimeter before a breach occurs.</p>
+                            <div class="mt-4 h-1 w-full bg-slate-800 rounded overflow-hidden">
+                                <div class="h-full bg-blue-500 w-3/4"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Investigator Card -->
+                    <div class="group relative bg-osint-base p-1 rounded-xl overflow-hidden hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-purple-500/20 to-transparent translate-y-[-100%] group-hover:translate-y-[100%] transition-transform duration-1000 delay-100"></div>
+                        <div class="bg-slate-950 p-8 rounded-lg h-full border border-purple-500/30">
+                            <i data-lucide="search" class="w-12 h-12 text-purple-400 mb-6 group-hover:scale-110 transition-transform"></i>
+                            <h3 class="text-xl font-bold text-white mb-3">Investigators</h3>
+                            <p class="text-slate-400 text-sm">Digital forensics. Connecting scattered data points to find truth.</p>
+                            <div class="mt-4 h-1 w-full bg-slate-800 rounded overflow-hidden">
+                                <div class="h-full bg-purple-500 w-1/2"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Attacker Card -->
+                    <div class="group relative bg-osint-base p-1 rounded-xl overflow-hidden hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-red-500/20 to-transparent translate-y-[-100%] group-hover:translate-y-[100%] transition-transform duration-1000 delay-200"></div>
+                        <div class="bg-slate-950 p-8 rounded-lg h-full border border-red-500/30">
+                            <i data-lucide="skull" class="w-12 h-12 text-osint-alert mb-6 group-hover:scale-110 transition-transform"></i>
+                            <h3 class="text-xl font-bold text-white mb-3">Attackers</h3>
+                            <p class="text-slate-400 text-sm">Weaponized recon. Finding weak links in the chain for exploitation.</p>
+                            <div class="mt-4 h-1 w-full bg-slate-800 rounded overflow-hidden">
+                                <div class="h-full bg-red-500 w-full animate-pulse"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 3: Methods (Interactive Data Flow) -->
+        <section class="slide flex items-center justify-center bg-osint-base" id="slide-3">
+            <div class="cyber-grid"></div>
+            <div class="max-w-6xl mx-auto px-4 w-full relative z-10">
+                <h2 class="text-4xl font-bold text-white mb-12 text-center">Collection Vectors</h2>
+                
+                <div class="grid md:grid-cols-2 gap-8 items-center">
+                    <div class="space-y-4">
+                        <!-- Method 1 -->
+                        <div class="group p-4 bg-slate-900/80 border border-white/5 hover:border-osint-primary rounded-lg transition-all cursor-crosshair">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <div class="p-2 bg-blue-500/10 rounded text-blue-400"><i data-lucide="globe"></i></div>
+                                    <h3 class="text-white font-mono">Passive Recon</h3>
+                                </div>
+                                <span class="text-xs text-slate-500 font-mono group-hover:text-osint-primary">Google Dorking</span>
+                            </div>
+                            <div class="h-0 group-hover:h-auto overflow-hidden transition-all duration-300">
+                                <p class="text-sm text-slate-400 mt-2 pl-12 border-l border-blue-500/30">
+                                    site:target.com filetype:pdf "confidential"
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Method 2 -->
+                        <div class="group p-4 bg-slate-900/80 border border-white/5 hover:border-osint-primary rounded-lg transition-all cursor-crosshair">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <div class="p-2 bg-purple-500/10 rounded text-purple-400"><i data-lucide="users"></i></div>
+                                    <h3 class="text-white font-mono">SOCMINT</h3>
+                                </div>
+                                <span class="text-xs text-slate-500 font-mono group-hover:text-osint-primary">Social Graph</span>
+                            </div>
+                            <div class="h-0 group-hover:h-auto overflow-hidden transition-all duration-300">
+                                <p class="text-sm text-slate-400 mt-2 pl-12 border-l border-purple-500/30">
+                                    Analyzing geolocation tags, family trees, and username reuse.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Method 3 -->
+                        <div class="group p-4 bg-slate-900/80 border border-white/5 hover:border-osint-primary rounded-lg transition-all cursor-crosshair">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <div class="p-2 bg-red-500/10 rounded text-red-400"><i data-lucide="radar"></i></div>
+                                    <h3 class="text-white font-mono">Infrastructure</h3>
+                                </div>
+                                <span class="text-xs text-slate-500 font-mono group-hover:text-osint-primary">Shodan/Maltego</span>
+                            </div>
+                            <div class="h-0 group-hover:h-auto overflow-hidden transition-all duration-300">
+                                <p class="text-sm text-slate-400 mt-2 pl-12 border-l border-red-500/30">
+                                    Identifying open ports, exposed webcams, and unpatched servers.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visual Representation -->
+                    <div class="relative h-64 md:h-80 bg-slate-900/50 rounded-lg border border-white/10 p-4 font-mono text-xs text-green-400 overflow-hidden shadow-2xl">
+                        <div class="absolute inset-0 bg-green-500/5 pointer-events-none"></div>
+                        <div class="typing-container">
+                            <p>> Initializing harvest...</p>
+                            <p>> Target: global_network</p>
+                            <p>> [✓] Indexing subdomains</p>
+                            <p>> [✓] Extracting metadata</p>
+                            <p>> [!] Warning: 3 exposed buckets found</p>
+                            <p class="animate-pulse">> Processing...</p>
+                        </div>
+                        <!-- Scanning Line Overlay -->
+                        <div class="absolute top-0 left-0 w-full h-1 bg-green-500/50 shadow-[0_0_15px_#22c55e] animate-scan"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 4: Hacker vs Researcher -->
+        <section class="slide flex items-center justify-center bg-black relative overflow-hidden" id="slide-4">
+            <div class="absolute inset-0 flex">
+                <div class="w-1/2 bg-red-950/20 border-r border-red-500/20 relative">
+                     <div class="absolute bottom-0 right-0 p-4 text-red-900/20 font-black text-9xl opacity-20 pointer-events-none">OFFENSE</div>
+                </div>
+                <div class="w-1/2 bg-cyan-950/20 border-l border-cyan-500/20 relative">
+                     <div class="absolute bottom-0 left-0 p-4 text-cyan-900/20 font-black text-9xl opacity-20 pointer-events-none">DEFENSE</div>
+                </div>
+            </div>
+            
+            <div class="max-w-7xl mx-auto px-4 relative z-10 w-full">
+                <div class="absolute left-1/2 top-0 -translate-x-1/2 bg-black border border-white/20 px-4 py-1 rounded-b-lg text-xs font-mono text-slate-400">
+                    VS
+                </div>
+                
+                <h2 class="text-center text-3xl font-bold text-white mb-16">Methodology Contrast</h2>
+                
+                <div class="grid md:grid-cols-2 gap-24">
+                    <!-- Red Team -->
+                    <div class="text-right">
+                        <div class="inline-flex items-center gap-3 mb-6">
+                            <h3 class="text-3xl font-bold text-red-500">RED TEAM</h3>
+                            <i data-lucide="sword" class="w-8 h-8 text-red-500"></i>
+                        </div>
+                        <ul class="space-y-6">
+                            <li class="group flex items-center justify-end gap-4 cursor-default">
+                                <span class="text-slate-400 group-hover:text-white transition-colors">Spear Phishing Targets</span>
+                                <div class="w-2 h-2 bg-red-900 group-hover:bg-red-500 rounded-full transition-colors"></div>
+                            </li>
+                            <li class="group flex items-center justify-end gap-4 cursor-default">
+                                <span class="text-slate-400 group-hover:text-white transition-colors">Credential Dumping</span>
+                                <div class="w-2 h-2 bg-red-900 group-hover:bg-red-500 rounded-full transition-colors"></div>
+                            </li>
+                            <li class="group flex items-center justify-end gap-4 cursor-default">
+                                <span class="text-slate-400 group-hover:text-white transition-colors">Physical Breach Planning</span>
+                                <div class="w-2 h-2 bg-red-900 group-hover:bg-red-500 rounded-full transition-colors"></div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Blue Team -->
+                    <div>
+                        <div class="inline-flex items-center gap-3 mb-6">
+                            <i data-lucide="shield" class="w-8 h-8 text-cyan-500"></i>
+                            <h3 class="text-3xl font-bold text-cyan-500">BLUE TEAM</h3>
+                        </div>
+                        <ul class="space-y-6">
+                            <li class="group flex items-center gap-4 cursor-default">
+                                <div class="w-2 h-2 bg-cyan-900 group-hover:bg-cyan-500 rounded-full transition-colors"></div>
+                                <span class="text-slate-400 group-hover:text-white transition-colors">Exposure Remediation</span>
+                            </li>
+                            <li class="group flex items-center gap-4 cursor-default">
+                                <div class="w-2 h-2 bg-cyan-900 group-hover:bg-cyan-500 rounded-full transition-colors"></div>
+                                <span class="text-slate-400 group-hover:text-white transition-colors">Asset Monitoring</span>
+                            </li>
+                            <li class="group flex items-center gap-4 cursor-default">
+                                <div class="w-2 h-2 bg-cyan-900 group-hover:bg-cyan-500 rounded-full transition-colors"></div>
+                                <span class="text-slate-400 group-hover:text-white transition-colors">Disinformation Analysis</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 5: Mindset -->
+        <section class="slide flex items-center justify-center bg-osint-surface" id="slide-5">
+            <div class="max-w-5xl mx-auto px-4 w-full">
+                <div class="bg-osint-base/80 backdrop-blur rounded-3xl p-12 border border-white/5 relative overflow-hidden shadow-2xl">
+                    <div class="absolute top-0 right-0 p-8 opacity-10">
+                        <i data-lucide="fingerprint" class="w-64 h-64 text-white"></i>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-12 items-center relative z-10">
+                        <div>
+                            <h2 class="text-3xl font-bold text-white mb-8">The Investigator Mindset</h2>
+                            <div class="space-y-8">
+                                <div class="flex gap-4 group">
+                                    <div class="flex-shrink-0 w-10 h-10 rounded bg-osint-primary/10 border border-osint-primary/50 text-osint-primary flex items-center justify-center font-bold font-mono group-hover:bg-osint-primary group-hover:text-black transition-colors">01</div>
+                                    <div>
+                                        <h4 class="text-white font-bold">Curiosity</h4>
+                                        <p class="text-slate-400 text-sm">Never stop asking "What else exists?"</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-4 group">
+                                    <div class="flex-shrink-0 w-10 h-10 rounded bg-osint-primary/10 border border-osint-primary/50 text-osint-primary flex items-center justify-center font-bold font-mono group-hover:bg-osint-primary group-hover:text-black transition-colors">02</div>
+                                    <div>
+                                        <h4 class="text-white font-bold">Triangulation</h4>
+                                        <p class="text-slate-400 text-sm">One source is a theory. Three sources are a fact.</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-4 group">
+                                    <div class="flex-shrink-0 w-10 h-10 rounded bg-osint-primary/10 border border-osint-primary/50 text-osint-primary flex items-center justify-center font-bold font-mono group-hover:bg-osint-primary group-hover:text-black transition-colors">03</div>
+                                    <div>
+                                        <h4 class="text-white font-bold">Ethics</h4>
+                                        <p class="text-slate-400 text-sm">Access does not equal authorization. Stay legal.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-center">
+                            <!-- Animated Polaroid/Case File -->
+                            <div class="relative w-56 h-72 bg-white/5 border border-white/10 p-3 rotate-3 hover:rotate-0 transition-all duration-500 group cursor-pointer">
+                                <div class="w-full h-2/3 bg-slate-900 border border-slate-700 flex items-center justify-center overflow-hidden">
+                                     <i data-lucide="user" class="w-24 h-24 text-slate-700 group-hover:text-osint-primary transition-colors duration-500"></i>
+                                     <!-- Scan Effect -->
+                                     <div class="absolute inset-0 bg-osint-primary/20 h-1 w-full animate-scan opacity-0 group-hover:opacity-100"></div>
+                                </div>
+                                <div class="mt-4 space-y-2">
+                                    <div class="h-2 bg-slate-700 w-3/4 rounded"></div>
+                                    <div class="h-2 bg-slate-700 w-1/2 rounded"></div>
+                                </div>
+                                <div class="absolute -top-2 -right-2 w-8 h-8 bg-red-500/80 rounded-full animate-pulse"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 6: Cases -->
+        <section class="slide flex items-center justify-center bg-osint-base" id="slide-6">
+             <div class="max-w-4xl mx-auto px-4 w-full">
+                <h2 class="text-3xl font-bold text-center text-white mb-16">Real-World Impact</h2>
+                
+                <div class="relative border-l-2 border-slate-800 ml-6 md:ml-0 space-y-12">
+                    
+                    <!-- Case 1 -->
+                    <div class="relative md:ml-12 pl-8 md:pl-0">
+                        <div class="absolute -left-[9px] md:-left-[41px] top-0 w-5 h-5 bg-osint-base border-2 border-osint-primary rounded-full z-10"></div>
+                        <div class="bg-osint-surface p-6 rounded-lg border border-white/5 hover:border-osint-primary transition-colors group">
+                            <div class="flex items-start justify-between mb-2">
+                                <h4 class="font-bold text-white text-lg">Conflict Monitoring</h4>
+                                <i data-lucide="map-pin" class="text-osint-primary opacity-50 group-hover:opacity-100"></i>
+                            </div>
+                            <p class="text-slate-400 text-sm leading-relaxed">
+                                Using background landmarks in TikTok videos to verify troop movements and debunk state propaganda in real-time.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Case 2 -->
+                    <div class="relative md:ml-12 pl-8 md:pl-0">
+                        <div class="absolute -left-[9px] md:-left-[41px] top-0 w-5 h-5 bg-osint-base border-2 border-green-500 rounded-full z-10"></div>
+                        <div class="bg-osint-surface p-6 rounded-lg border border-white/5 hover:border-green-500 transition-colors group">
+                            <div class="flex items-start justify-between mb-2">
+                                <h4 class="font-bold text-white text-lg">Scam Busting</h4>
+                                <i data-lucide="image" class="text-green-500 opacity-50 group-hover:opacity-100"></i>
+                            </div>
+                            <p class="text-slate-400 text-sm leading-relaxed">
+                                Reverse image searching "exclusive" crypto-guru photos to find they are actually stock photos or stolen Instagram profiles.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Case 3 -->
+                    <div class="relative md:ml-12 pl-8 md:pl-0">
+                         <div class="absolute -left-[9px] md:-left-[41px] top-0 w-5 h-5 bg-osint-base border-2 border-red-500 rounded-full z-10"></div>
+                        <div class="bg-osint-surface p-6 rounded-lg border border-white/5 hover:border-red-500 transition-colors group">
+                            <div class="flex items-start justify-between mb-2">
+                                <h4 class="font-bold text-white text-lg">Data Leak Detection</h4>
+                                <i data-lucide="unlock" class="text-red-500 opacity-50 group-hover:opacity-100"></i>
+                            </div>
+                            <p class="text-slate-400 text-sm leading-relaxed">
+                                Identifying a misconfigured S3 bucket containing 10,000 customer passports before it could be sold on the dark web.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+             </div>
+        </section>
+
+        <!-- Slide 7: Takeaways -->
+        <section class="slide flex items-center justify-center bg-osint-surface" id="slide-7">
+            <div class="cyber-grid"></div>
+            <div class="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-12 items-center relative z-10">
+                <div>
+                    <h2 class="text-5xl font-bold text-white mb-8">Debrief</h2>
+                    <div class="space-y-6">
+                        <div class="flex items-center gap-6 p-4 bg-slate-900/50 rounded-lg border border-white/5">
+                            <i data-lucide="zap" class="w-8 h-8 text-yellow-400"></i>
+                            <div>
+                                <strong class="text-white block text-lg">Knowledge is Power</strong>
+                                <span class="text-slate-400 text-sm">Information is free. Insight is earned.</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-6 p-4 bg-slate-900/50 rounded-lg border border-white/5">
+                            <i data-lucide="lock" class="w-8 h-8 text-osint-primary"></i>
+                            <div>
+                                <strong class="text-white block text-lg">Defense First</strong>
+                                <span class="text-slate-400 text-sm">Know your footprint to protect it.</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-6 p-4 bg-slate-900/50 rounded-lg border border-white/5">
+                            <i data-lucide="eye" class="w-8 h-8 text-green-400"></i>
+                            <div>
+                                <strong class="text-white block text-lg">Always Watching</strong>
+                                <span class="text-slate-400 text-sm">The internet never forgets.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="relative">
+                    <div class="absolute inset-0 bg-osint-primary/20 blur-3xl animate-pulse-slow"></div>
+                    <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" class="relative rounded-lg border border-white/20 shadow-2xl grayscale hover:grayscale-0 transition-all duration-700 rotate-2 hover:rotate-0">
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 8: Closing -->
+        <section class="slide flex items-center justify-center bg-black" id="slide-8">
+            <div class="relative z-10 text-center px-4 max-w-5xl">
+                <i data-lucide="quote" class="w-12 h-12 text-slate-700 mx-auto mb-6"></i>
+                <h2 class="text-3xl md:text-6xl font-black text-white mb-12 leading-tight">
+                    “OSINT is not about secret hacking tricks—it’s about connecting the <span class="text-osint-primary">DOTS</span> in plain sight.”
+                </h2>
+                
+                <div class="flex justify-center gap-6">
+                    <button onclick="goToSlide(0)" class="flex items-center gap-2 px-8 py-4 bg-white text-black hover:bg-osint-primary transition-colors font-bold rounded-full">
+                        <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                        RESTART
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Slide Navigation Controls -->
+    <div class="fixed bottom-8 right-8 z-50 flex gap-4">
+        <button onclick="prevSlide()" class="group p-4 rounded-full bg-slate-900 border border-white/20 text-white hover:border-osint-primary transition-all">
+            <i data-lucide="chevron-left" class="w-6 h-6 group-hover:-translate-x-1 transition-transform"></i>
+        </button>
+        <button onclick="nextSlide()" class="group p-4 rounded-full bg-slate-900 border border-white/20 text-white hover:border-osint-primary transition-all">
+            <i data-lucide="chevron-right" class="w-6 h-6 group-hover:translate-x-1 transition-transform"></i>
+        </button>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        lucide.createIcons();
+
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progress-bar');
+
+        function updateSlideUI() {
+            slides.forEach((slide, index) => {
+                if(index === currentSlide) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                }
+            });
+
+            // Update Progress Bar
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlideUI();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlideUI();
+            }
+        }
+
+        function goToSlide(index) {
+            if(index >= 0 && index < slides.length) {
+                currentSlide = index;
+                updateSlideUI();
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+
+        // Initialize
+        updateSlideUI();
+    </script>
+</body>
+</html>
